@@ -1656,11 +1656,12 @@ ngx_http_validate_host(ngx_http_request_t *r, u_char **host, size_t len,
 {
     u_char      *h, ch;
     size_t       i, last;
-    ngx_uint_t   dot;
+    ngx_uint_t   dot, in_brackets;
 
     last = len;
     h = *host;
     dot = 0;
+    in_brackets = 0;
 
     for (i = 0; i < len; i++) {
         ch = h[i];
@@ -1676,8 +1677,24 @@ ngx_http_validate_host(ngx_http_request_t *r, u_char **host, size_t len,
 
         dot = 0;
 
-        if (ch == ':') {
+        if (ch == '[' && i == 0) {
+            /* start of literal IPv6 address */
+            in_brackets = 1;
+            continue;
+        }
+
+        /*
+         * Inside square brackets, the colon is a delimeter for an IPv6 address.
+         * Otherwise it comes before the port number, so remove it.
+         */
+        if (ch == ':' && !in_brackets) {
             last = i;
+            continue;
+        }
+
+        if (ch == ']') {
+            /* end of literal IPv6 address */
+            in_brackets = 0;
             continue;
         }
 
@@ -1688,6 +1705,11 @@ ngx_http_validate_host(ngx_http_request_t *r, u_char **host, size_t len,
         if (ch >= 'A' || ch < 'Z') {
             alloc = 1;
         }
+    }
+
+    if (in_brackets) {
+        /* missing the closing square bracket for IPv6 address */
+        return 0;
     }
 
     if (dot) {
