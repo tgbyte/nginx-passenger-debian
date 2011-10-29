@@ -10,8 +10,7 @@ BUILDDIR_light = $(CURDIR)/debian/build-light
 BUILDDIR_extras = $(CURDIR)/debian/build-extras
 MODULESDIR = $(CURDIR)/debian/modules
 BASEDIR = $(CURDIR)
-PASSENGER_GEM_DIR = $(shell echo "`gem query -d -n passenger | grep "Installed at" | awk -F": " '{ print $$2 }'`")
-PASSENGER_GEM_VERSION = $(shell echo "`gem query -d -n passenger | grep "passenger \(.*\)" | awk -F"(" '{ print $$2 }' | awk -F")" '{ print $$1 }'`")
+PASSENGER_GEM_DIR = $(shell echo "`passenger-config --root`")
 
 DEB_BUILD_ARCH ?=$(shell dpkg-architecture -qDEB_BUILD_ARCH)
 ifeq ($(DEB_BUILD_ARCH),sparc)
@@ -111,7 +110,7 @@ config.status.passenger: config.env.passenger config.sub config.guess
 	    --with-mail_ssl_module \
 	    --add-module=$(MODULESDIR)/nginx-echo \
 	    --add-module=$(MODULESDIR)/nginx-upstream-fair \
-	    --add-module=$(PASSENGER_GEM_DIR)/gems/passenger-$(PASSENGER_GEM_VERSION)/ext/nginx \
+	    --add-module=$(PASSENGER_GEM_DIR)/ext/nginx \
 	    $(CONFIGURE_OPTS) >$@
 	touch $@
 
