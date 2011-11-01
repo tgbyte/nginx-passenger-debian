@@ -7,6 +7,7 @@ Uploaders: Fabio Tranchitella <kobold@debian.org>,
  Michael Lustfield <mtecknology@ubuntu.com>
 Build-Depends: debhelper (>= 7),
                autotools-dev,
+               libcurl4-openssl-dev,
                libgd2-noxpm-dev,
                libgeoip-dev,
                liblua5.1-dev,
