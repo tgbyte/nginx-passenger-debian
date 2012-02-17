@@ -1,9 +1,9 @@
 Source: nginx
 Section: httpd
 Priority: optional
-Maintainer: Jose Parrella <bureado@debian.org>
-Uploaders: Fabio Tranchitella <kobold@debian.org>,
- Kartik Mistry <kartik@debian.org>,
+Maintainer: Kartik Mistry <kartik@debian.org>
+Uploaders: Jose Parrella <bureado@debian.org>,
+ Fabio Tranchitella <kobold@debian.org>,
  Michael Lustfield <michael@lustfield.net>,
  Dmitry E. Oboukhov <unera@debian.org>
 Build-Depends: debhelper (>= 7),
@@ -148,6 +148,7 @@ Description: Debugging symbols for nginx (full)
 
 Package: nginx-light
 Architecture: any
+Priority: extra
 Depends: ${misc:Depends}, ${shlibs:Depends}, nginx-common (= ${source:Version})
 Provides: httpd, nginx
 Conflicts: nginx-full, nginx-extras, nginx-passenger
@@ -188,6 +189,7 @@ Description: Debugging symbols for nginx (light)
 
 Package: nginx-extras
 Architecture: any
+Priority: extra
 Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends},
  nginx-common (= ${source:Version})
 Provides: httpd, nginx
@@ -214,8 +216,8 @@ Description: nginx web server with full set of core modules and extras
  Mail Modules:
    Mail Core, POP3, IMAP, SMTP, SSL
  Third Party Modules:
-   Echo, Embedded Lua, http push, Nginx Development Kit, Upload Progress,
-   HttpHeadersMore, Upstream Fair Queue, Chunkin
+   Echo, Embedded Lua, http push, Nginx Development Kit, Upload module,
+   Upload Progress, HttpHeadersMore, Upstream Fair Queue, Chunkin
 
 Package: nginx-extras-dbg
 Architecture: any

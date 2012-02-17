@@ -1,6 +1,9 @@
 #!/usr/bin/make -f
 
-CFLAGS = -Wall -g
+CFLAGS = `dpkg-buildflags --get CFLAGS`
+CFLAGS += -Wall
+CFLAGS += `dpkg-buildflags --get CPPFLAGS`
+LDFLAGS = `dpkg-buildflags --get LDFLAGS`
 
 FLAVOURS:=full passenger light extras
 
@@ -17,10 +20,13 @@ ifeq ($(DEB_BUILD_ARCH),sparc)
 	CONFIGURE_OPTS = --with-cc-opt="-m32 -mcpu=ultrasparc"
 endif
 
-ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-	CFLAGS += -O0
-else
-	CFLAGS += -O2
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+	NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+	ifeq (${NUMJOBS}, 0)
+		NUMJOBS = 1
+	endif
+	MAKEFLAGS += -j$(NUMJOBS)
 endif
 
 config.sub:
@@ -46,7 +52,7 @@ config.env.%:
 	cp -Pa $(CURDIR)/man $(BUILDDIR_$*)/
 
 config.status.full: config.env.full config.sub config.guess
-	cd $(BUILDDIR_full) && ./configure \
+	cd $(BUILDDIR_full) && CFLAGS="$(CFLAGS)" CORE_LINK="$(LDFLAGS)" ./configure  \
 	    --prefix=/etc/nginx \
 	    --conf-path=/etc/nginx/nginx.conf \
 	    --error-log-path=/var/log/nginx/error.log \
@@ -115,7 +121,7 @@ config.status.passenger: config.env.passenger config.sub config.guess
 	touch $@
 
 config.status.light: config.env.light config.sub config.guess
-	cd $(BUILDDIR_light) && ./configure \
+	cd $(BUILDDIR_light) && CFLAGS="$(CFLAGS)" CORE_LINK="$(LDFLAGS)" ./configure  \
 	    --prefix=/etc/nginx \
 	    --conf-path=/etc/nginx/nginx.conf \
 	    --error-log-path=/var/log/nginx/error.log \
@@ -145,7 +151,7 @@ config.status.light: config.env.light config.sub config.guess
 	touch $@
 
 config.status.extras: config.env.extras config.sub config.guess
-	cd $(BUILDDIR_extras) && ./configure \
+	cd $(BUILDDIR_extras) && CFLAGS="$(CFLAGS)" CORE_LINK="$(LDFLAGS)" ./configure  \
 	    --prefix=/etc/nginx \
 	    --conf-path=/etc/nginx/nginx.conf \
 	    --error-log-path=/var/log/nginx/error.log \
@@ -183,6 +189,7 @@ config.status.extras: config.env.extras config.sub config.guess
 	    --add-module=$(MODULESDIR)/nginx-echo \
 	    --add-module=$(MODULESDIR)/nginx-lua \
 	    --add-module=$(MODULESDIR)/nginx-http-push \
+	    --add-module=$(MODULESDIR)/nginx-upload-module \
 	    --add-module=$(MODULESDIR)/nginx-upload-progress \
 	    --add-module=$(MODULESDIR)/headers-more-nginx-module \
 	    --add-module=$(MODULESDIR)/chunkin-nginx-module \
@@ -201,7 +208,7 @@ build-arch: $(foreach flavour,$(FLAVOURS),build-arch.$(flavour))
 	dh_testdir
 	touch $@
 
-build-dbg.%:
+build-dbg.%: install
 	dh_testdir
 	dh_strip --package=nginx-$(*) --dbg-package=nginx-$(*)-dbg
 
