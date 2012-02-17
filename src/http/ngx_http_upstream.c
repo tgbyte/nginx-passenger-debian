@@ -1,6 +1,7 @@
 
 /*
  * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
  */
 
 
@@ -706,6 +707,9 @@ ngx_http_upstream_cache(ngx_http_request_t *r, ngx_http_upstream_t *u)
         c->min_uses = u->conf->cache_min_uses;
         c->body_start = u->conf->buffer_size;
         c->file_cache = u->conf->cache->data;
+
+        c->lock = u->conf->cache_lock;
+        c->lock_timeout = u->conf->cache_lock_timeout;
 
         u->cache_status = NGX_HTTP_CACHE_MISS;
     }
@@ -1895,8 +1899,6 @@ ngx_http_upstream_process_headers(ngx_http_request_t *r, ngx_http_upstream_t *u)
             r->method = NGX_HTTP_GET;
         }
 
-        r->valid_unparsed_uri = 0;
-
         ngx_http_internal_redirect(r, uri, &args);
         ngx_http_finalize_request(r, NGX_DONE);
         return NGX_DONE;
@@ -2696,9 +2698,17 @@ ngx_http_upstream_process_request(ngx_http_request_t *r)
 
             } else if (p->upstream_eof) {
 
-                /* TODO: check length & update cache */
+                tf = u->pipe->temp_file;
 
-                ngx_http_file_cache_update(r, u->pipe->temp_file);
+                if (u->headers_in.content_length_n == -1
+                    || u->headers_in.content_length_n
+                       == tf->offset - (off_t) r->cache->body_start)
+                {
+                    ngx_http_file_cache_update(r, tf);
+
+                } else {
+                    ngx_http_file_cache_free(r->cache, tf);
+                }
 
             } else if (p->upstream_error) {
                 ngx_http_file_cache_free(r->cache, u->pipe->temp_file);
@@ -4433,6 +4443,50 @@ ngx_http_upstream_bind_set_slot(ngx_conf_t *cf, ngx_command_t *cmd,
     default:
         return NGX_CONF_ERROR;
     }
+}
+
+
+char *
+ngx_http_upstream_param_set_slot(ngx_conf_t *cf, ngx_command_t *cmd,
+    void *conf)
+{
+    char  *p = conf;
+
+    ngx_str_t                   *value;
+    ngx_array_t                **a;
+    ngx_http_upstream_param_t   *param;
+
+    a = (ngx_array_t **) (p + cmd->offset);
+
+    if (*a == NULL) {
+        *a = ngx_array_create(cf->pool, 4, sizeof(ngx_http_upstream_param_t));
+        if (*a == NULL) {
+            return NGX_CONF_ERROR;
+        }
+    }
+
+    param = ngx_array_push(*a);
+    if (param == NULL) {
+        return NGX_CONF_ERROR;
+    }
+
+    value = cf->args->elts;
+
+    param->key = value[1];
+    param->value = value[2];
+    param->skip_empty = 0;
+
+    if (cf->args->nelts == 4) {
+        if (ngx_strcmp(value[3].data, "if_not_empty") != 0) {
+            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                               "invalid parameter \"%V\"", &value[3]);
+            return NGX_CONF_ERROR;
+        }
+
+        param->skip_empty = 1;
+    }
+
+    return NGX_CONF_OK;
 }
 
 

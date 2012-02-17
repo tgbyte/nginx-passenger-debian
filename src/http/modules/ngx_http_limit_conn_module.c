@@ -1,6 +1,7 @@
 
 /*
  * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
  */
 
 
@@ -483,7 +484,7 @@ ngx_http_limit_conn_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_http_limit_conn_conf_t *conf = child;
 
     if (conf->limits.elts == NULL) {
-        *conf = *prev;
+        conf->limits = prev->limits;
     }
 
     ngx_conf_merge_uint_value(conf->log_level, prev->log_level, NGX_LOG_ERR);

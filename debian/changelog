@@ -1,8 +1,75 @@
-nginx (1.1.8-2~bpo60+1) squeeze-backports; urgency=low
+nginx (1.1.14-1~bpo60+1) squeeze-backports; urgency=low
 
-  * Backport to Debian 6.0 "Squeeze"
+  * Backport to Debian 6.0 "Squeeze".
 
- -- Cyril Lavier <cyril.lavier@davromaniak.eu>  Fri, 25 Nov 2011 15:58:40 +0100
+ -- Cyril Lavier <cyril.lavier@davromaniak.eu>  Wed, 01 Feb 2012 21:46:38 +0100
+
+nginx (1.1.14-1) unstable; urgency=low
+
+  [Cyril Lavier]
+  * New upstream release.
+  * debian/rules:
+    + Resolved the lintian errors "unstripped-binary-or-object" with a
+      cleaner correction (Thanks to Steven Chamberlain for the patch).
+    + Added a check on the parallel building to force NUMJOBS to 1 if
+      the value 0 is given.
+  * debian/modules:
+    + Updated nginx-lua module to version 0.4.1.
+
+  [Kartik Mistry]
+  * debian/rules, debian/control, debian/copyright,
+    debian/modules/nginx-upload-module:
+    + Added Upload module to nginx-extras, updated long description and
+      copyright. (Closes: #654593)
+  * debian/modules/README.modules:
+    + Added Homepage information for some modules.
+  * debian/rules:
+    + Enable hardened build flags, Thanks to Moritz Muehlenhoff for patch.
+      (Closes: #658186)
+
+ -- Kartik Mistry <kartik@debian.org>  Wed, 01 Feb 2012 17:50:05 +0530
+
+nginx (1.1.12-1) unstable; urgency=low
+
+  [Kartik Mistry]
+  * debian/control:
+    + Set myself as Maintainer, Jose Parrella as Uploaders with approval from
+      team.
+  * debian/copyright:
+    + Fixed DEP5 URL.
+    + Updated debian/* copyright.
+  * debian/modules:
+    + Updated nginx-lua module to version 0.3.1rc43
+
+  [Cyril Lavier]
+  * New upstream release.
+  * debian/conf/sites-available/default:
+    + Added a / in the alias directive. (Closes: #653160)
+  * debian/rules:
+    + Added necessary lines for parallel building.
+
+ -- Kartik Mistry <kartik@debian.org>  Sun, 01 Jan 2012 17:21:02 +0530
+
+nginx (1.1.11-1) unstable; urgency=low
+
+  [Kartik Mistry]
+  * New upstream release.
+  * debian/control:
+    + Set priority to extra for nginx-light and nginx-extras binaries
+      (Policy: Section 2.5)
+  * debian/patches/607418-ipv6-addresses.diff:
+    + Removed. Merged upstream with 1.1.9 release.
+  * debian/copyright:
+    + Updated upstream copyright year, updated Michael's email address, misc
+      changes for format.
+
+  [Michael Lustfield]
+  * debian/conf/fastcgi_params:
+    + Changed $server_https to $https per new feature in 1.1.11.
+  * debian/conf/nginx.conf:
+    + Removed map for $server_https as it's no longer needed.
+
+ -- Kartik Mistry <kartik@debian.org>  Wed, 14 Dec 2011 09:45:40 +0530
 
 nginx (1.1.8-2) unstable; urgency=low
 
