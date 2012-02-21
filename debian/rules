@@ -116,6 +116,7 @@ config.status.passenger: config.env.passenger config.sub config.guess
 	    --with-mail_ssl_module \
 	    --add-module=$(MODULESDIR)/nginx-echo \
 	    --add-module=$(MODULESDIR)/nginx-upstream-fair \
+	    --add-module=$(MODULESDIR)/chunkin-nginx-module \
 	    --add-module=$(PASSENGER_GEM_DIR)/ext/nginx \
 	    $(CONFIGURE_OPTS) >$@
 	touch $@
