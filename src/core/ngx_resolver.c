@@ -160,7 +160,7 @@ ngx_resolver_create(ngx_conf_t *cf, ngx_str_t *names, ngx_uint_t n)
 
             r->valid = ngx_parse_time(&s, 1);
 
-            if (r->valid == NGX_ERROR) {
+            if (r->valid == (time_t) NGX_ERROR) {
                 ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                                    "invalid parameter: %V", &names[i]);
                 return NULL;
@@ -189,11 +189,6 @@ ngx_resolver_create(ngx_conf_t *cf, ngx_str_t *names, ngx_uint_t n)
         uc->sockaddr = u.addrs->sockaddr;
         uc->socklen = u.addrs->socklen;
         uc->server = u.addrs->name;
-
-        uc->log = cf->cycle->new_log;
-        uc->log.handler = ngx_resolver_log_error;
-        uc->log.data = uc;
-        uc->log.action = "resolving";
     }
 
     return r;
@@ -876,6 +871,12 @@ ngx_resolver_send_query(ngx_resolver_t *r, ngx_resolver_node_t *rn)
     }
 
     if (uc->connection == NULL) {
+
+        uc->log = *r->log;
+        uc->log.handler = ngx_resolver_log_error;
+        uc->log.data = uc;
+        uc->log.action = "resolving";
+
         if (ngx_udp_connect(uc) != NGX_OK) {
             return NGX_ERROR;
         }
@@ -1688,20 +1689,15 @@ ngx_resolver_lookup_name(ngx_resolver_t *r, ngx_str_t *name, uint32_t hash)
 
         /* hash == node->key */
 
-        do {
-            rn = (ngx_resolver_node_t *) node;
+        rn = (ngx_resolver_node_t *) node;
 
-            rc = ngx_memn2cmp(name->data, rn->name, name->len, rn->nlen);
+        rc = ngx_memn2cmp(name->data, rn->name, name->len, rn->nlen);
 
-            if (rc == 0) {
-                return rn;
-            }
+        if (rc == 0) {
+            return rn;
+        }
 
-            node = (rc < 0) ? node->left : node->right;
-
-        } while (node != sentinel && hash == node->key);
-
-        break;
+        node = (rc < 0) ? node->left : node->right;
     }
 
     /* not found */
@@ -1844,7 +1840,7 @@ ngx_resolver_create_name_query(ngx_resolver_node_t *rn, ngx_resolver_ctx_t *ctx)
             len++;
 
         } else {
-            if (len == 0) {
+            if (len == 0 || len > 255) {
                 return NGX_DECLINED;
             }
 
@@ -1853,6 +1849,10 @@ ngx_resolver_create_name_query(ngx_resolver_node_t *rn, ngx_resolver_ctx_t *ctx)
         }
 
         p--;
+    }
+
+    if (len == 0 || len > 255) {
+        return NGX_DECLINED;
     }
 
     *p = (u_char) len;

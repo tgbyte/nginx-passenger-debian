@@ -478,6 +478,7 @@ ngx_ssl_dhparam(ngx_conf_t *cf, ngx_ssl_t *ssl, ngx_str_t *file)
     return NGX_OK;
 }
 
+
 ngx_int_t
 ngx_ssl_ecdh_curve(ngx_conf_t *cf, ngx_ssl_t *ssl, ngx_str_t *name)
 {
@@ -488,7 +489,7 @@ ngx_ssl_ecdh_curve(ngx_conf_t *cf, ngx_ssl_t *ssl, ngx_str_t *name)
 
     /*
      * Elliptic-Curve Diffie-Hellman parameters are either "named curves"
-     * from RFC 4492 section 5.1.1, or explicitely described curves over
+     * from RFC 4492 section 5.1.1, or explicitly described curves over
      * binary fields. OpenSSL only supports the "named curves", which provide
      * maximum interoperability.
      */
@@ -517,6 +518,7 @@ ngx_ssl_ecdh_curve(ngx_conf_t *cf, ngx_ssl_t *ssl, ngx_str_t *name)
 
     return NGX_OK;
 }
+
 
 ngx_int_t
 ngx_ssl_create_connection(ngx_ssl_t *ssl, ngx_connection_t *c, ngx_uint_t flags)
@@ -842,7 +844,7 @@ ngx_ssl_recv(ngx_connection_t *c, u_char *buf, size_t size)
         case NGX_ERROR:
             c->read->error = 1;
 
-            /* fall thruogh */
+            /* fall through */
 
         case NGX_AGAIN:
             return c->ssl->last;
@@ -1801,44 +1803,39 @@ ngx_ssl_get_cached_session(ngx_ssl_conn_t *ssl_conn, u_char *id, int len,
 
         /* hash == node->key */
 
-        do {
-            sess_id = (ngx_ssl_sess_id_t *) node;
+        sess_id = (ngx_ssl_sess_id_t *) node;
 
-            rc = ngx_memn2cmp(id, sess_id->id,
-                              (size_t) len, (size_t) node->data);
-            if (rc == 0) {
+        rc = ngx_memn2cmp(id, sess_id->id, (size_t) len, (size_t) node->data);
 
-                if (sess_id->expire > ngx_time()) {
-                    ngx_memcpy(buf, sess_id->session, sess_id->len);
+        if (rc == 0) {
 
-                    ngx_shmtx_unlock(&shpool->mutex);
+            if (sess_id->expire > ngx_time()) {
+                ngx_memcpy(buf, sess_id->session, sess_id->len);
 
-                    p = buf;
-                    sess = d2i_SSL_SESSION(NULL, &p, sess_id->len);
+                ngx_shmtx_unlock(&shpool->mutex);
 
-                    return sess;
-                }
+                p = buf;
+                sess = d2i_SSL_SESSION(NULL, &p, sess_id->len);
 
-                ngx_queue_remove(&sess_id->queue);
-
-                ngx_rbtree_delete(&cache->session_rbtree, node);
-
-                ngx_slab_free_locked(shpool, sess_id->session);
-#if (NGX_PTR_SIZE == 4)
-                ngx_slab_free_locked(shpool, sess_id->id);
-#endif
-                ngx_slab_free_locked(shpool, sess_id);
-
-                sess = NULL;
-
-                goto done;
+                return sess;
             }
 
-            node = (rc < 0) ? node->left : node->right;
+            ngx_queue_remove(&sess_id->queue);
 
-        } while (node != sentinel && hash == node->key);
+            ngx_rbtree_delete(&cache->session_rbtree, node);
 
-        break;
+            ngx_slab_free_locked(shpool, sess_id->session);
+#if (NGX_PTR_SIZE == 4)
+            ngx_slab_free_locked(shpool, sess_id->id);
+#endif
+            ngx_slab_free_locked(shpool, sess_id);
+
+            sess = NULL;
+
+            goto done;
+        }
+
+        node = (rc < 0) ? node->left : node->right;
     }
 
 done:
@@ -1908,31 +1905,26 @@ ngx_ssl_remove_session(SSL_CTX *ssl, ngx_ssl_session_t *sess)
 
         /* hash == node->key */
 
-        do {
-            sess_id = (ngx_ssl_sess_id_t *) node;
+        sess_id = (ngx_ssl_sess_id_t *) node;
 
-            rc = ngx_memn2cmp(id, sess_id->id, len, (size_t) node->data);
+        rc = ngx_memn2cmp(id, sess_id->id, len, (size_t) node->data);
 
-            if (rc == 0) {
+        if (rc == 0) {
 
-                ngx_queue_remove(&sess_id->queue);
+            ngx_queue_remove(&sess_id->queue);
 
-                ngx_rbtree_delete(&cache->session_rbtree, node);
+            ngx_rbtree_delete(&cache->session_rbtree, node);
 
-                ngx_slab_free_locked(shpool, sess_id->session);
+            ngx_slab_free_locked(shpool, sess_id->session);
 #if (NGX_PTR_SIZE == 4)
-                ngx_slab_free_locked(shpool, sess_id->id);
+            ngx_slab_free_locked(shpool, sess_id->id);
 #endif
-                ngx_slab_free_locked(shpool, sess_id);
+            ngx_slab_free_locked(shpool, sess_id);
 
-                goto done;
-            }
+            goto done;
+        }
 
-            node = (rc < 0) ? node->left : node->right;
-
-        } while (node != sentinel && hash == node->key);
-
-        break;
+        node = (rc < 0) ? node->left : node->right;
     }
 
 done:

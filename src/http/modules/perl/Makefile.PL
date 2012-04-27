@@ -3,6 +3,7 @@
 # Copyright (C) Nginx, Inc.
 
 use 5.006001;
+use Config;
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
@@ -13,7 +14,10 @@ WriteMakefile(
     ABSTRACT_FROM     => 'nginx.pm',     # retrieve abstract from module
     AUTHOR            => 'Igor Sysoev',
 
-    CCFLAGS           => "$ENV{NGX_PM_CFLAGS}",
+    # $Config{ccflags}/$Config{lddlflags} doesn't contain hardening flags
+    # (yet), add them manually.
+    CCFLAGS           => "$Config{ccflags} $ENV{CFLAGS} $ENV{CPPFLAGS} $ENV{NGX_PM_CFLAGS}",
+    LDDLFLAGS         => "$Config{lddlflags} $ENV{LDFLAGS}",
     OPTIMIZE          => '-O',
 
     INC               => "-I ../../../../../src/core " .
@@ -25,7 +29,11 @@ WriteMakefile(
                          "-I ../../../../../$ENV{NGX_OBJS} " .
                          ($ENV{NGX_PCRE} =~ /^(YES|NO)/ ? "" :
                              ($ENV{NGX_PCRE} =~ m#^/# ? "-I $ENV{NGX_PCRE} " :
-                                  "-I ../../../../../$ENV{NGX_PCRE} ")),
+                                  "-I ../../../../../$ENV{NGX_PCRE} ")) .
+                         ($ENV{NGX_OPENSSL} =~ /^(YES|NO)/ ? "" :
+                             ($ENV{NGX_OPENSSL} =~ m#^/# ?
+                                  "-I $ENV{NGX_OPENSSL}/.openssl/include " :
+                      "-I ../../../../../$ENV{NGX_OPENSSL}/.openssl/include ")),
 
     depend => {
         'nginx.c'     =>
