@@ -4,13 +4,17 @@ CFLAGS = `dpkg-buildflags --get CFLAGS`
 CFLAGS += -Wall
 CFLAGS += `dpkg-buildflags --get CPPFLAGS`
 LDFLAGS = `dpkg-buildflags --get LDFLAGS`
+# export necessary for (hardening) flags for perl
+# (src/http/modules/perl/Makefile.PL).
+export CFLAGS LDFLAGS
 
-FLAVOURS:=full passenger light extras
+FLAVOURS:=full passenger light extras naxsi
 
 BUILDDIR_full = $(CURDIR)/debian/build-full
 BUILDDIR_passenger = $(CURDIR)/debian/build-passenger
 BUILDDIR_light = $(CURDIR)/debian/build-light
 BUILDDIR_extras = $(CURDIR)/debian/build-extras
+BUILDDIR_naxsi = $(CURDIR)/debian/build-naxsi
 MODULESDIR = $(CURDIR)/debian/modules
 BASEDIR = $(CURDIR)
 PASSENGER_GEM_DIR = $(shell echo "`passenger-config --root`")
@@ -26,7 +30,8 @@ ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 	ifeq (${NUMJOBS}, 0)
 		NUMJOBS = 1
 	endif
-	MAKEFLAGS += -j$(NUMJOBS)
+else
+	NUMJOBS = 1
 endif
 
 config.sub:
@@ -80,8 +85,10 @@ config.status.full: config.env.full config.sub config.guess
 	    --with-md5=/usr/include/openssl \
 	    --with-mail \
 	    --with-mail_ssl_module \
+	    --add-module=$(MODULESDIR)/nginx-auth-pam \
 	    --add-module=$(MODULESDIR)/nginx-echo \
 	    --add-module=$(MODULESDIR)/nginx-upstream-fair \
+	    --add-module=$(MODULESDIR)/nginx-dav-ext-module \
             $(CONFIGURE_OPTS) >$@
 	touch $@
 
@@ -185,16 +192,44 @@ config.status.extras: config.env.extras config.sub config.guess
 	    --with-md5=/usr/include/openssl \
 	    --with-mail \
 	    --with-mail_ssl_module \
+	    --add-module=$(MODULESDIR)/nginx-auth-pam \
+	    --add-module=$(MODULESDIR)/chunkin-nginx-module \
+	    --add-module=$(MODULESDIR)/headers-more-nginx-module \
 	    --add-module=$(MODULESDIR)/nginx-development-kit \
-	    --add-module=$(MODULESDIR)/nginx-upstream-fair \
 	    --add-module=$(MODULESDIR)/nginx-echo \
-	    --add-module=$(MODULESDIR)/nginx-lua \
 	    --add-module=$(MODULESDIR)/nginx-http-push \
+	    --add-module=$(MODULESDIR)/nginx-lua \
 	    --add-module=$(MODULESDIR)/nginx-upload-module \
 	    --add-module=$(MODULESDIR)/nginx-upload-progress \
-	    --add-module=$(MODULESDIR)/headers-more-nginx-module \
-	    --add-module=$(MODULESDIR)/chunkin-nginx-module \
+	    --add-module=$(MODULESDIR)/nginx-upstream-fair \
+	    --add-module=$(MODULESDIR)/nginx-dav-ext-module \
             $(CONFIGURE_OPTS) >$@
+	touch $@
+
+config.status.naxsi: config.env.naxsi config.sub config.guess
+	cd $(BUILDDIR_naxsi) && CFLAGS="$(CFLAGS)" CORE_LINK="$(LDFLAGS)" ./configure  \
+	    --prefix=/etc/nginx \
+	    --conf-path=/etc/nginx/nginx.conf \
+	    --error-log-path=/var/log/nginx/error.log \
+	    --http-client-body-temp-path=/var/lib/nginx/body \
+	    --http-fastcgi-temp-path=/var/lib/nginx/fastcgi \
+	    --http-log-path=/var/log/nginx/access.log \
+	    --http-proxy-temp-path=/var/lib/nginx/proxy \
+	    --http-scgi-temp-path=/var/lib/nginx/scgi \
+	    --http-uwsgi-temp-path=/var/lib/nginx/uwsgi \
+	    --lock-path=/var/lock/nginx.lock \
+	    --pid-path=/var/run/nginx.pid \
+	    --with-http_ssl_module \
+	    --without-mail_pop3_module \
+	    --without-mail_smtp_module \
+	    --without-mail_imap_module \
+	    --without-http_uwsgi_module \
+	    --without-http_scgi_module \
+	    --with-ipv6 \
+	    --add-module=$(MODULESDIR)/nginx-upstream-fair \
+	    --add-module=$(MODULESDIR)/nginx-cache-purge \
+	    --add-module=$(MODULESDIR)/naxsi/naxsi_src \
+	    $(CONFIGURE_OPTS) >$@
 	touch $@
 
 config.status.%:
@@ -203,7 +238,7 @@ config.status.%:
 build-arch.%: config.status.%
 	dh_testdir
 	dh_prep
-	$(MAKE) -C $(BUILDDIR_$*) build
+	$(MAKE) -j$(NUMJOBS) -C $(BUILDDIR_$*) build
 
 build-arch: $(foreach flavour,$(FLAVOURS),build-arch.$(flavour))
 	dh_testdir
@@ -249,6 +284,8 @@ binary-indep: install
 	dh_installexamples -i
 	dh_installinit -r --no-start -i --init-script=nginx
 	cp debian/logrotate debian/nginx-common/etc/logrotate.d/nginx
+	mkdir -p debian/nginx-common/lib/systemd/system
+	cp debian/nginx-common.service debian/nginx-common/lib/systemd/system/nginx.service
 	dh_link -i
 	dh_compress -i
 	dh_fixperms -i

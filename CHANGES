@@ -1,4 +1,126 @@
 
+Changes with nginx 1.1.19                                        12 Apr 2012
+
+    *) Security: specially crafted mp4 file might allow to overwrite memory
+       locations in a worker process if the ngx_http_mp4_module was used,
+       potentially resulting in arbitrary code execution (CVE-2012-2089).
+       Thanks to Matthew Daley.
+
+    *) Bugfix: nginx/Windows might be terminated abnormally.
+       Thanks to Vincent Lee.
+
+    *) Bugfix: nginx hogged CPU if all servers in an upstream were marked as
+       "backup".
+
+    *) Bugfix: the "allow" and "deny" directives might be inherited
+       incorrectly if they were used with IPv6 addresses.
+
+    *) Bugfix: the "modern_browser" and "ancient_browser" directives might
+       be inherited incorrectly.
+
+    *) Bugfix: timeouts might be handled incorrectly on Solaris/SPARC.
+
+    *) Bugfix: in the ngx_http_mp4_module.
+
+
+Changes with nginx 1.1.18                                        28 Mar 2012
+
+    *) Change: keepalive connections are no longer disabled for Safari by
+       default.
+
+    *) Feature: the $connection_requests variable.
+
+    *) Feature: $tcpinfo_rtt, $tcpinfo_rttvar, $tcpinfo_snd_cwnd and
+       $tcpinfo_rcv_space variables.
+
+    *) Feature: the "worker_cpu_affinity" directive now works on FreeBSD.
+
+    *) Feature: the "xslt_param" and "xslt_string_param" directives.
+       Thanks to Samuel Behan.
+
+    *) Bugfix: in configure tests.
+       Thanks to Piotr Sikora.
+
+    *) Bugfix: in the ngx_http_xslt_filter_module.
+
+    *) Bugfix: nginx could not be built on Debian GNU/Hurd.
+
+
+Changes with nginx 1.1.17                                        15 Mar 2012
+
+    *) Security: content of previously freed memory might be sent to a
+       client if backend returned specially crafted response.
+       Thanks to Matthew Daley.
+
+    *) Bugfix: in the embedded perl module if used from SSI.
+       Thanks to Matthew Daley.
+
+    *) Bugfix: in the ngx_http_uwsgi_module.
+
+
+Changes with nginx 1.1.16                                        29 Feb 2012
+
+    *) Change: the simultaneous subrequest limit has been raised to 200.
+
+    *) Feature: the "from" parameter of the "disable_symlinks" directive.
+
+    *) Feature: the "return" and "error_page" directives can now be used to
+       return 307 redirections.
+
+    *) Bugfix: a segmentation fault might occur in a worker process if the
+       "resolver" directive was used and there was no "error_log" directive
+       specified at global level.
+       Thanks to Roman Arutyunyan.
+
+    *) Bugfix: a segmentation fault might occur in a worker process if the
+       "proxy_http_version 1.1" or "fastcgi_keep_conn on" directives were
+       used.
+
+    *) Bugfix: memory leaks.
+       Thanks to Lanshun Zhou.
+
+    *) Bugfix: in the "disable_symlinks" directive.
+
+    *) Bugfix: on ZFS filesystem disk cache size might be calculated
+       incorrectly; the bug had appeared in 1.0.1.
+
+    *) Bugfix: nginx could not be built by the icc 12.1 compiler.
+
+    *) Bugfix: nginx could not be built by gcc on Solaris; the bug had
+       appeared in 1.1.15.
+
+
+Changes with nginx 1.1.15                                        15 Feb 2012
+
+    *) Feature: the "disable_symlinks" directive.
+
+    *) Feature: the "proxy_cookie_domain" and "proxy_cookie_path"
+       directives.
+
+    *) Bugfix: nginx might log incorrect error "upstream prematurely closed
+       connection" instead of correct "upstream sent too big header" one.
+       Thanks to Feibo Li.
+
+    *) Bugfix: nginx could not be built with the ngx_http_perl_module if the
+       --with-openssl option was used.
+
+    *) Bugfix: the number of internal redirects to named locations was not
+       limited.
+
+    *) Bugfix: calling $r->flush() multiple times might cause errors in the
+       ngx_http_gzip_filter_module.
+
+    *) Bugfix: temporary files might be not removed if the "proxy_store"
+       directive was used with SSI includes.
+
+    *) Bugfix: in some cases non-cacheable variables (such as the $args
+       variable) returned old empty cached value.
+
+    *) Bugfix: a segmentation fault might occur in a worker process if too
+       many SSI subrequests were issued simultaneously; the bug had appeared
+       in 0.7.25.
+
+
 Changes with nginx 1.1.14                                        30 Jan 2012
 
     *) Feature: multiple "limit_req" limits may be used simultaneously.
@@ -10,8 +132,8 @@ Changes with nginx 1.1.14                                        30 Jan 2012
 
     *) Bugfix: in the OpenSSL library initialization.
 
-    *) Bugfix: the "proxy_redirect" directives might not be correctly
-       inherited.
+    *) Bugfix: the "proxy_redirect" directives might be inherited
+       incorrectly.
 
     *) Bugfix: memory leak during reconfiguration if the "pcre_jit"
        directive was used.
