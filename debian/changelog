@@ -1,8 +1,247 @@
-nginx (1.1.19-1~bpo60+1) squeeze-backports; urgency=low
+nginx (1.2.6-1) unstable; urgency=low
 
-  * Backport to Debian 6.0 "Squeeze"
+  [ Kartik Mistry ]
+  * New upstream release.
+  * debian/nginx-common.nginx.init:
+    + Used log_*_msg instead of echo for better init messages.
+    + Added patch to check start-stop-daemon exit status, Thanks to
+      Sergey B Kirpichev <skirpichev@gmail.com> (Closes: #695374).
+  * debian/po/ja.po:
+    + Added new Japanese translation. Thanks to victory <victory.deb@gmail.com>
+      (Closes: #692481).
+  * debian/po/pt_BR.po:
+    + Added new Brazilian Portuguese translation. Thanks to
+      Adriano Rafael Gomes <adrianorg@gmail.com> (Closes: #692481).
 
- -- Cyril Lavier <cyril.lavier@davromaniak.eu>  Fri, 13 Apr 2012 21:34:44 +0200
+  [ Cyril Lavier ]
+  * debian/rules
+    + Added RealIP module in nginx-naxsi (Closes: #693302).
+  * debian/modules/nginx-cache-purge/
+    + Updated nginx-cache-purge module with the 2.0 version.
+  * debian/modules/nginx-lua/
+    + Updated nginx-lua module with the 0.7.8 version.
+  * debian/modules/nginx-echo/
+    + Updated the nginx-echo module with the 0.41 version.
+  * debian/modules/headers-more-nginx-module/
+    + Updated the Headers-more module with the 0.19 version.
+  * debian/modules/README.Modules-versions
+    + Updated the current version of modules following the updates.
+
+  [ Michael Lustfield ]
+  * debian/conf/sites-available/default
+    + Uncommented listen lines to make server block default.
+
+ -- Kartik Mistry <kartik@debian.org>  Tue, 18 Dec 2012 10:29:18 +0530
+
+nginx (1.2.4-2) unstable; urgency=low
+
+  * debian/conf/nginx.conf:
+    + Fixed pid path to /run/nginx.pid in config.
+  * debian/po/*.po, debian/nginx-naxsi-ui.templates, debian/po/templates.pot:
+    + Fixed ^M characters in template file. Thanks to Christian Perrier
+      <bubulle@debian.org> for help (Closes: #692191, #692335)
+
+ -- Kartik Mistry <kartik@debian.org>  Mon, 05 Nov 2012 13:05:34 +0530
+
+nginx (1.2.4-1) unstable; urgency=low
+
+  [ Michael Lustfield ]
+  * debian/nginx-common.nginx.init
+    + Added --retry to start-stop-daemon. (Closes: #682360)
+    + Added $named to Required-Start/Stop. (Closes: #679879)
+    + Added some other modifications after testing. (LP: #1033856)
+  * debian/rules:
+    + Added -DFORTIFY_SOURCE=2 -fstack-protector to build flags.
+      (Closes: #680712)
+  * debian/nginx-common.install:
+    + Moved default docs to /usr/share/nginx/html. (Closes: #1031515)
+  * debian/rules:
+    + Set prefix to /usr/share/nginx.
+  * debian/po/fr.po
+    + Updated French translation file. (Closes: #679601)
+  * debian/logrotate:
+    + Removed semicolon after an fi statement. (Closes: #683870)
+  * debian/copyright:
+    + Removed trailing slash from File: fields.
+  * Changed /var/run to /run in multiple files. (LP: #1050516)
+  * debian/nginx-common.dirs:
+    + Added /run to .dirs to avoid conflicts with backports. (LP: #1072641)
+  * debian/nginx-*.postinst:
+    + Added sites-enabled/available directory checks. (Closes: #688410)
+      - Thanks Andreas Marschke <andreas.marschke@gmail.com>
+    + Moved the symlink creation to nginx-common.
+  * Updated debconf templates.
+  * conf/sites-available/default:
+    + Updated root to point at /usr/share/nginx/html instead of www.
+
+  [ Kartik Mistry ]
+  * Acknowledged NMUs (Closes: #681758, #681381)
+  * New upstream release (Closes: #683704)
+  * debian/po/*.po:
+    + Removed ^M characters from headers.
+    + Fixed all files with recent unneeded template change.
+
+ -- Kartik Mistry <kartik@debian.org>  Tue, 30 Oct 2012 10:10:34 +0530
+
+nginx (1.2.1-2.2) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fix "removes files that were installed by another package":
+    don't remove directories that are owned by (and removed from) nginx-common
+    from nginx-extras.postrm. This seems to have been the idea in commit e30a854
+    ("Moved configuration purging to nginx-common.") except that it was added
+    in nginx-common.postrm without being removed in nginx-extras.postrm.
+    Remove nginx-extras.postrm since it's empty after this change.
+    (Closes: #681758)
+
+ -- gregor herrmann <gregoa@debian.org>  Sat, 04 Aug 2012 18:13:10 +0200
+
+nginx (1.2.1-2.1) unstable; urgency=low
+
+  * Non-maintainer upload to deal with the goal of 100% translated
+    debconf templates for 7 languages in wheezy.
+  * Drop nasty ^M characters from the templates file. They break
+    debconf-updatepo and therefore translations. Closes: #681381
+  * As a consequence, fix translations as some of them had been
+    "updated" in the meantime wrt broken templates
+
+ -- Christian Perrier <bubulle@debian.org>  Thu, 12 Jul 2012 21:23:57 +0200
+
+nginx (1.2.1-2) unstable; urgency=medium
+
+  [Cyril Lavier]
+  * Urgency set to medium, security bug in naxsi module, fix via upstream.
+  * debian/modules/naxsi:
+    + Updated naxsi module to version 0.46-1 fixing the following security
+      issue : potential file disclosure in nx_extract.
+
+ -- Cyril Lavier <cyril.lavier@davromaniak.eu>  Wed, 27 Jun 2012 13:52:03 +0200
+
+nginx (1.2.1-1) unstable; urgency=medium
+
+  [Kartik Mistry]
+  * Urgency set to medium, RC bug fix.
+  * New upstream release (Closes: #677396)
+  * debian/nginx.1:
+    + Updated with description taken from debian/control.
+  * debian/po/cs.po:
+    + Added Czech translation of PO debconf template.
+      (Closes: #673120, #678659)
+  * debian/po/da.po:
+    + Added Danish translation of PO debconf template.
+      (Closes: #674461, #677806)
+  * debian/po/it.po:
+    + Added Italian translation of PO debconf template. (Closes: #679185)
+  * debian/po/nl.po:
+    + Added Dutch translation of PO debconf template. (Closes: #675314)
+  * debian/po/pl.po:
+    + Added Polish translation of PO debconf template. (Closes: #678156)
+  * debian/po/pt.po:
+    + Added Portuguese translation of PO debconf template.
+      (Closes: #674609, #679149)
+  * debian/po/sk.po:
+    + Added Slovak translation of PO debconf template. (Closes: #677282)
+  * debian/po/sv.po:
+    + Added Swedish translation of PO debconf template.
+      (Closes: #675107, #677032)
+  * debian/copyright:
+    + Removed duplicate Copyright fields.
+  * debian/modules/nginx-lua:
+    + Updated to latest upstream git tag 0.5.0rc29-6446ee71b8, Fix for worker
+      process crashes (Closes: #674928)
+  * debian/nginx-naxsi-ui.templates, debian/po/templates.pot:
+    + Updated debconf template after review from l10n-english team.
+      (Closes: #675237)
+    + Do not add empty line.
+  * debian/po/*.po:
+    + Refreshed after template update.
+
+  [Cyril Lavier]
+  * debian/rules:
+    + Added status module to nginx-naxsi. (Closes: #672998)
+  * debian/control:
+    + Updated nginx-naxsi module list.
+    + Updated nginx-full module list. (Closes: #677128)
+  * debian/po/de.po:
+    + Added German translation of PO debconf template.
+      (Closes: #673861, #677790)
+  * debian/po/ru.po:
+    + Added Russian translation of PO debconf template. (Closes: #674188)
+  * debian/po/es.po:
+    + Added Spanish translation of PO debconf template. (Closes: #678915)
+  * debian/po/gl.po:
+    + Added Galician translation of PO debconf template. (Closes: #678910)
+  * debian/nginx-naxsi-ui.postrm, debian/nginx-naxsi-ui.prerm:
+    + Added postrm and prerm scripts for nginx-naxsi-ui. (Closes: #673787)
+
+  [Michael Lustfield]
+  * debian/nginx-common.preinst:
+    + Copied install stuff to upgrade in case statement. (LP: #1014506)
+  * debian/rules
+    + Added --with-pcre-jit to build. (LP: #915344)
+  * debian/conf/sites-available/default:
+    + Changed default try_files example. (LP: #969207)
+  * debian/nginx-*.postrm:
+    + Changed a few things so files are only purged on purge. (Closes: #678060)
+      - Thanks Jeroen Dekkers <jeroen@dekkers.ch>
+
+ -- Kartik Mistry <kartik@debian.org>  Wed, 27 Jun 2012 09:24:50 +0530
+
+nginx (1.2.0-1) unstable; urgency=low
+
+  [Cyril Lavier]
+  * New upstream release. (Closes: #670306)
+    + 1.2.x is stable release now.
+  * debian/modules/chunkin-nginx-module:
+    + Updated chunkin-nginx-module to v0.23rc2-3-g85eca98.
+  * debian/modules/headers-more-module:
+    + Updated headers-more-module to v0.17rc1-4-g33a82ed.
+  * debian/modules/nginx-development-kit:
+    + Updated nginx-development-kit to v0.2.17-7-g24202b4.
+  * debian/modules/nginx-echo:
+    + Updated nginx-echo to v0.38rc2-7-g080c0a1.
+  * debian/modules/nginx-lua:
+    + Updated nginx-lua to v0.5.0rc25-5-g8d28785.
+  * debian/modules/nginx-upstream-fair:
+    + Updated nginx-upstream-fair to a18b409.
+  * debian/modules/nginx-upload-progress:
+    + Updated nginx-upload-progress to v0.9.0-0-ga788dea.
+  * debian/modules/naxsi:
+    + Updated naxsi to 0.46
+  * debian/modules/README.Modules-versions:
+    + Updated versions and URLs for modules.
+  * debian/naxsi-ui-extract, debian/naxsi-ui-intercept,
+    debian/nginx-naxsi-ui.*, debian/naxsi-ui-extract.1,
+    debian/naxsi-ui-intercept.1, debian/rules:
+    + Added nginx-naxsi-ui package containing the learning daemon
+      and the WebUI.
+  * debian/nginx-common.nginx.default, debian/nginx-common.nginx.init:
+    + Renamed files to be compliant with the nginx-naxsi-ui package.
+  * debian/po:
+    + Added needed files for using po-debconf.
+    + Added French translation.
+  * debian/control:
+    + Applied the modifications given after the review by Justin Rye.
+
+  [Michael Lustfield]
+  * debian/conf/uwsgi_params:
+    + Added UWSGI_SCHEME to uwsgi_params. (Closes: #664878)
+  * debian/conf/sites-available/default:
+    + Added allow directive for ipv6 localhost. (Closes: #664271)
+
+  [Kartik Mistry]
+  * debian/control:
+    + wrap-and-sort.
+  * debian/copyright:
+    + Added missing copyrights, minor formatting fixes.
+  * debian/nginx-common.nginx.init:
+    + Added ulimit for restarts, Thanks to Daniel Roschka
+      <danielroschka@phoenitydawn.de> for patch. (Closes: #673580)
+  * debian/conf/sites-available/default:
+    + Added patch to fix deprecated "listen" directive, Thanks to
+      Guillaume Plessis <gui@dotdeb.org> for patch. (Closes: #672632)
+
+ -- Kartik Mistry <kartik@debian.org>  Mon, 14 May 2012 11:15:00 +0530
 
 nginx (1.1.19-1) unstable; urgency=high
 
