@@ -1,4 +1,6 @@
+#ifndef DDEBUG
 #define DDEBUG 0
+#endif
 #include "ddebug.h"
 
 #include "ngx_http_echo_util.h"
@@ -89,37 +91,15 @@ ngx_http_echo_send_chain_link(ngx_http_request_t* r,
         ngx_http_echo_ctx_t *ctx, ngx_chain_t *in)
 {
     ngx_int_t        rc;
-    size_t           size;
-    ngx_chain_t     *cl;
 
     rc = ngx_http_echo_send_header_if_needed(r, ctx);
 
-    if (r->header_only || rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+    if (rc == NGX_ERROR || rc > NGX_OK || r->header_only) {
         return rc;
     }
 
-    if (r->http_version < NGX_HTTP_VERSION_11 && !ctx->headers_sent) {
-        ctx->headers_sent = 1;
-
-        size = 0;
-
-        for (cl = in; cl; cl = cl->next) {
-            size += ngx_buf_size(cl->buf);
-        }
-
-        r->headers_out.content_length_n = (off_t) size;
-
-        if (r->headers_out.content_length) {
-            r->headers_out.content_length->hash = 0;
-        }
-
-        r->headers_out.content_length = NULL;
-
-        rc = ngx_http_send_header(r);
-
-        if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
-            return rc;
-        }
+    if (rc == NGX_ERROR) {
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     if (in == NULL) {
@@ -150,10 +130,12 @@ ngx_int_t
 ngx_http_echo_send_header_if_needed(ngx_http_request_t* r,
         ngx_http_echo_ctx_t *ctx)
 {
-    /* ngx_int_t   rc; */
+    ngx_http_echo_loc_conf_t    *elcf;
 
-    if ( ! ctx->headers_sent ) {
-        r->headers_out.status = NGX_HTTP_OK;
+    if (!ctx->headers_sent) {
+        elcf = ngx_http_get_module_loc_conf(r, ngx_http_echo_module);
+
+        r->headers_out.status = (ngx_uint_t) elcf->status;
 
         if (ngx_http_set_content_type(r) != NGX_OK) {
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
@@ -162,10 +144,8 @@ ngx_http_echo_send_header_if_needed(ngx_http_request_t* r,
         ngx_http_clear_content_length(r);
         ngx_http_clear_accept_ranges(r);
 
-        if (r->http_version >= NGX_HTTP_VERSION_11) {
-            ctx->headers_sent = 1;
-            return ngx_http_send_header(r);
-        }
+        ctx->headers_sent = 1;
+        return ngx_http_send_header(r);
     }
 
     return NGX_OK;

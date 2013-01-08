@@ -1,5 +1,6 @@
+#ifndef DDEBUG
 #define DDEBUG 0
-
+#endif
 #include "ddebug.h"
 
 #include "ngx_http_headers_more_util.h"
@@ -13,11 +14,12 @@ ngx_http_headers_more_parse_header(ngx_conf_t *cf, ngx_str_t *cmd_name,
 {
     ngx_http_headers_more_header_val_t             *hv;
 
-    ngx_uint_t                        i;
-    ngx_str_t                         key = ngx_null_string;
-    ngx_str_t                         value = ngx_null_string;
-    ngx_flag_t                        seen_end_of_key;
-    ngx_http_compile_complex_value_t  ccv;
+    ngx_uint_t                           i;
+    ngx_str_t                            key = ngx_null_string;
+    ngx_str_t                            value = ngx_null_string;
+    ngx_flag_t                           seen_end_of_key;
+    ngx_http_compile_complex_value_t     ccv;
+    u_char                              *p;
 
     hv = ngx_array_push(headers);
     if (hv == NULL) {
@@ -80,7 +82,7 @@ ngx_http_headers_more_parse_header(ngx_conf_t *cf, ngx_str_t *cmd_name,
       return NGX_ERROR;
     }
 
-    hv->hash = 1;
+    hv->hash = ngx_hash_key_lc(key.data, key.len);
     hv->key = key;
 
     hv->offset = 0;
@@ -114,7 +116,23 @@ ngx_http_headers_more_parse_header(ngx_conf_t *cf, ngx_str_t *cmd_name,
     if (value.len == 0) {
         ngx_memzero(&hv->value, sizeof(ngx_http_complex_value_t));
         return NGX_OK;
+
     }
+
+    /* Nginx request header value requires to be a null-terminated
+     * C string */
+
+    p = ngx_palloc(cf->pool, value.len + 1);
+    if (p == NULL) {
+        return NGX_ERROR;
+    }
+
+    ngx_memcpy(p, value.data, value.len);
+    p[value.len] = '\0';
+    value.data = p;
+    value.len++; /* we should also compile the trailing '\0' */
+
+    /* compile the header value as a complex value */
 
     ngx_memzero(&ccv, sizeof(ngx_http_compile_complex_value_t));
 
@@ -250,13 +268,19 @@ ngx_http_headers_more_rm_header(ngx_list_t *l, ngx_table_elt_t *h)
                 break;
             }
 
+            dd("switching to the next part %p", part->next);
+
             part = part->next;
+#if 1
+            data = part->elts;
+#endif
+
             h = part->elts;
             i = 0;
         }
 
         if (&data[i] == h) {
-            dd("found header");
+            dd("found header at %d", (int) i);
 
             return ngx_http_headers_more_rm_header_helper(l, part, i);
         }
@@ -286,23 +310,24 @@ ngx_http_headers_more_rm_header_helper(ngx_list_t *l, ngx_list_part_t *cur,
         cur->nelts--;
 
         if (cur == l->last) {
-            if (l->nalloc > 1) {
-                l->nalloc--;
-                return NGX_OK;
-            }
-
-            /* l->nalloc == 1 */
-
-            part = &l->part;
-            while (part->next != cur) {
-                if (part->next == NULL) {
-                    return NGX_ERROR;
+            if (cur->nelts == 0) {
+#if 1
+                part = &l->part;
+                while (part->next != cur) {
+                    if (part->next == NULL) {
+                        return NGX_ERROR;
+                    }
+                    part = part->next;
                 }
-                part = part->next;
-            }
 
-            part->next = NULL;
-            l->last = part;
+                l->last = part;
+                part->next = NULL;
+                l->nalloc = part->nelts;
+#endif
+
+            } else {
+                l->nalloc = cur->nelts;
+            }
 
             return NGX_OK;
         }
@@ -328,7 +353,7 @@ ngx_http_headers_more_rm_header_helper(ngx_list_t *l, ngx_list_part_t *cur,
         cur->nelts--;
 
         if (cur == l->last) {
-            l->nalloc--;
+            l->nalloc = cur->nelts;
         }
 
         return NGX_OK;
@@ -343,15 +368,12 @@ ngx_http_headers_more_rm_header_helper(ngx_list_t *l, ngx_list_part_t *cur,
     new->nelts = cur->nelts - i - 1;
     new->next = cur->next;
 
-    l->nalloc = new->nelts;
-
     cur->nelts = i;
     cur->next = new;
     if (cur == l->last) {
         l->last = new;
+        l->nalloc = new->nelts;
     }
-
-    cur = new;
 
     return NGX_OK;
 }
